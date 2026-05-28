@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Our Kitchen</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --cream: #FAFAF7;
+    --ink: #1A1A18;
+    --ink-soft: #6B6B67;
+    --border: #E4E4DF;
+    --accent: #2D6A4F;
+    --accent-light: #EAF3EE;
+    --tag-bg: #F0F0EB;
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); min-height: 100vh; }
+
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 60px; background: var(--cream);
+    position: sticky; top: 0; z-index: 10;
+  }
+  .logo { font-family: 'DM Serif Display', serif; font-size: 20px; }
+  .logo span { color: var(--accent); font-style: italic; }
+  .search-wrap { position: relative; }
+  .search-input {
+    border: 1px solid var(--border); border-radius: 24px;
+    padding: 7px 14px 7px 34px; font-size: 13px; font-family: 'DM Sans', sans-serif;
+    background: white; color: var(--ink); width: 220px; outline: none;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .search-icon-pos { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--ink-soft); pointer-events: none; }
+
+  .hero {
+    padding: 2.5rem 2rem 1.75rem;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem;
+  }
+  .hero h1 { font-family: 'DM Serif Display', serif; font-size: 42px; line-height: 1.1; letter-spacing: -1px; max-width: 380px; }
+  .hero h1 em { color: var(--accent); font-style: italic; }
+  .hero p { margin-top: 0.5rem; color: var(--ink-soft); font-size: 14px; font-weight: 300; }
+  .stats { display: flex; gap: 1.75rem; text-align: right; flex-shrink: 0; }
+  .stat-num { font-family: 'DM Serif Display', serif; font-size: 30px; line-height: 1; }
+  .stat-label { font-size: 11px; color: var(--ink-soft); margin-top: 2px; letter-spacing: 0.5px; text-transform: uppercase; }
+
+  .filters {
+    padding: 0.875rem 2rem;
+    display: flex; gap: 6px; align-items: center;
+    border-bottom: 1px solid var(--border); flex-wrap: wrap;
+  }
+  .filter-chip {
+    padding: 5px 14px; border-radius: 20px; font-size: 12px;
+    border: 1px solid var(--border); background: white; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; color: var(--ink-soft); transition: all 0.15s;
+  }
+  .filter-chip:hover { border-color: var(--accent); color: var(--accent); }
+  .filter-chip.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+  .results-bar { padding: 0.75rem 2rem; font-size: 12px; color: var(--ink-soft); border-bottom: 1px solid var(--border); }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1.25rem; padding: 1.5rem 2rem;
+  }
+
+  .card {
+    background: white; border: 1px solid var(--border);
+    border-radius: 12px; overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s; cursor: pointer;
+  }
+  .card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.07); }
+
+  .card-img { height: 100px; display: flex; align-items: center; justify-content: center; font-size: 40px; }
+  .card-body { padding: 0.875rem 1rem 1rem; }
+  .card-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; gap: 6px; flex-wrap: wrap; }
+  .card-tag {
+    font-size: 10px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase;
+    color: var(--accent); background: var(--accent-light); padding: 3px 9px; border-radius: 20px; flex-shrink: 0;
+  }
+  .card-method { font-size: 11px; color: var(--ink-soft); }
+  .card-title { font-family: 'DM Serif Display', serif; font-size: 17px; line-height: 1.25; margin-bottom: 5px; }
+  .card-protein { font-size: 12px; color: var(--ink-soft); font-weight: 300; }
+  .card-source { font-size: 11px; color: var(--accent); margin-top: 6px; opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .empty { padding: 3rem 2rem; text-align: center; color: var(--ink-soft); }
+  .empty p { font-size: 14px; margin-top: 0.5rem; }
+
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(20,20,18,0.5); z-index: 100;
+    align-items: center; justify-content: center;
+    padding: 1rem;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--cream); border-radius: 16px; width: 100%; max-width: 500px;
+    max-height: 88vh; overflow-y: auto; padding: 1.75rem; position: relative;
+  }
+  .modal-close {
+    position: absolute; top: 1rem; right: 1rem;
+    background: var(--tag-bg); border: none; border-radius: 50%;
+    width: 28px; height: 28px; cursor: pointer; font-size: 14px;
+    display: flex; align-items: center; justify-content: center; color: var(--ink-soft);
+  }
+  .modal-emoji { font-size: 42px; margin-bottom: 0.875rem; }
+  .modal-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 0.75rem; }
+  .modal-badge { font-size: 11px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; padding: 3px 10px; border-radius: 20px; }
+  .badge-cat { color: var(--accent); background: var(--accent-light); }
+  .badge-method { color: #666; background: var(--tag-bg); }
+  .badge-protein { color: #7a5230; background: #FBF3EC; }
+  .modal-title { font-family: 'DM Serif Display', serif; font-size: 28px; letter-spacing: -0.5px; margin-bottom: 1.25rem; line-height: 1.2; }
+  .modal-link { display: inline-flex; align-items: center; gap: 6px; color: var(--accent); font-size: 13px; font-weight: 500; text-decoration: none; background: var(--accent-light); padding: 8px 16px; border-radius: 8px; margin-bottom: 0.5rem; }
+  .modal-link:hover { background: #d3e9de; }
+  .modal-note { font-size: 12px; color: var(--ink-soft); margin-top: 0.5rem; font-style: italic; }
+
+  footer { border-top: 1px solid var(--border); padding: 1.5rem 2rem; display: flex; justify-content: space-between; align-items: center; margin-top: 2rem; }
+  .footer-logo { font-family: 'DM Serif Display', serif; font-size: 16px; }
+  .footer-logo span { color: var(--accent); font-style: italic; }
+  .footer-text { font-size: 12px; color: var(--ink-soft); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">our <span>kitchen</span></div>
+  <div class="search-wrap">
+    <span class="search-icon-pos">🔍</span>
+    <input class="search-input" id="search" placeholder="Search recipes..." oninput="applyFilters()" />
+  </div>
+</header>
+
+<section class="hero">
+  <div>
+    <h1>Recipes we <em>love</em> making together</h1>
+    <p>Our personal collection — straight from the kitchen.</p>
+  </div>
+  <div class="stats">
+    <div>
+      <div class="stat-num" id="total-count">52</div>
+      <div class="stat-label">Recipes</div>
+    </div>
+    <div>
+      <div class="stat-num" id="showing-count">52</div>
+      <div class="stat-label">Showing</div>
+    </div>
+  </div>
+</section>
+
+<div class="filters" id="filter-bar"></div>
+<div class="results-bar" id="results-bar"></div>
+<main class="grid" id="recipe-grid"></main>
+
+<footer>
+  <div class="footer-logo">our <span>kitchen</span></div>
+  <div class="footer-text">Made with love ♥</div>
+</footer>
+
+<div class="modal-overlay" id="detail-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<script>
+const RAW = [
+  {protein:"Beef",name:"Slow Cooker Beef and Broccoli Bowl",category:"Asian",method:"Slow Cooker",link:"https://thedefineddish.com/slow-cooker-beef-and-broccoli-bowls/"},
+  {protein:"Beef",name:"Steak Arugula Cannelloni Bean Salad",category:"Salad",method:"Grill",link:""},
+  {protein:"Chicken",name:"Creamy Ricotta Chicken and Orzo Skillet",category:"Italian",method:"Stove & Oven",link:"https://thedefineddish.com/creamy-ricotta-chicken-and-orzo-skillet/"},
+  {protein:"Chicken",name:"Buffalo Caesar Bowls with Za'atar Chicken",category:"Salad",method:"Stove",link:""},
+  {protein:"Chicken",name:"Harissa Avocado Chicken Bowl",category:"Bowl",method:"Grill",link:"https://thedefineddish.com/harissa-avocado-chicken-bowls/"},
+  {protein:"Chicken",name:"Skillet Sun Dried Tomato Chicken Thighs",category:"Mediterranean",method:"Stove",link:""},
+  {protein:"Chicken",name:"Greek Kale Salad with Creamy Tahini Dressing",category:"Salad",method:"",link:""},
+  {protein:"Chicken",name:"Greek Bowls with Tomato Cucumber Salad",category:"Bowl",method:"Grill",link:""},
+  {protein:"Chicken",name:"Creamy Lemon Feta Chicken with Orzo",category:"Mediterranean",method:"Stove",link:"https://thedefineddish.com/creamy-one-pot-lemon-feta-chicken-with-orzo/"},
+  {protein:"Chicken",name:"Chicken Caesar Pasta Salad",category:"Salad",method:"Stove",link:""},
+  {protein:"Chicken",name:"Chicken Tikka Masala",category:"Indian",method:"Stove & Oven",link:""},
+  {protein:"Chicken",name:"Classic Chicken Salad (Lunch)",category:"Lunch",method:"",link:""},
+  {protein:"Chicken",name:"Thai Chicken Salad",category:"Asian",method:"",link:""},
+  {protein:"Chicken",name:"Hibachi Chicken w/ Magic Mustard Sauce",category:"Japanese",method:"Stove",link:"https://thedefineddish.com/hibachi-style-chicken-with-magic-mustard-sauce/"},
+  {protein:"Fish",name:"Mahi-Mahi Bowls with Adobo Quinoa",category:"Latin",method:"Stove",link:""},
+  {protein:"",name:"Pizza Dough",category:"Italian",method:"Oven",link:""},
+  {protein:"",name:"Herby Mushroom Ravioli",category:"Italian",method:"Stove",link:""},
+  {protein:"",name:"Homemade Four Cheese Ravioli",category:"Italian",method:"Oven",link:""},
+  {protein:"",name:"Ginger Soy Sauce",category:"Japanese",method:"Blender",link:""},
+  {protein:"",name:"Meal Prep Pasta Salad",category:"Lunch",method:"Stove",link:""},
+  {protein:"Pork",name:"Slow Cooker Shredded Lemongrass Pork Bowls",category:"Asian",method:"Slow Cooker",link:"https://thedefineddish.com/slow-cooker-shredded-lemongrass-pork-bowls/"},
+  {protein:"Sausage",name:"Creamy Tortellini Soup",category:"Soup",method:"Stove",link:""},
+  {protein:"Shrimp",name:"Shrimp Rice Noodles with Peanut Butter Sauce",category:"Asian",method:"Stove",link:""},
+  {protein:"Shrimp",name:"Simple Shrimp Stir Fry with Creamy Sesame",category:"Asian",method:"Stove",link:""},
+  {protein:"Turkey",name:"Ground Turkey Skillet with Sweet Potatoes and Black Beans",category:"American",method:"Stove",link:""},
+  {protein:"",name:"Banana Pancakes",category:"Breakfast",method:"Stove",link:"https://www.loveandlemons.com/banana-pancakes/"},
+  {protein:"Shrimp",name:"Teriyaki Shrimp Sushi Bowls",category:"Asian",method:"Stove",link:""},
+  {protein:"Chicken",name:"BBQ Chicken Pizza",category:"Pizza",method:"Ooni",link:""},
+  {protein:"",name:"BBQ Sauce",category:"Sauce",method:"Stove",link:""},
+  {protein:"Chicken",name:"Queso Chicken and Rice",category:"Mexican",method:"Oven",link:""},
+  {protein:"Chicken",name:"Asian Meatballs",category:"Asian",method:"Oven",link:""},
+  {protein:"",name:"Roasted Summer Veggies",category:"Mediterranean",method:"Oven",link:""},
+  {protein:"Beef",name:"Burger Bowls",category:"American",method:"Grill",link:""},
+  {protein:"Shrimp",name:"Drunken Noodles",category:"Asian",method:"Stove",link:""},
+  {protein:"Sausage",name:"Rigatoni with Sausage & Kale",category:"Italian",method:"Stove",link:""},
+  {protein:"Chicken",name:"Vietnamese Chicken Noodle Bowls",category:"Asian",method:"Grill",link:"https://thedefineddish.com/vietnamese-inspired-chicken-and-noodle-bowls/"},
+  {protein:"",name:"Pesto",category:"Italian",method:"",link:""},
+  {protein:"Sausage",name:"Pesto Sausage Pasta",category:"Italian",method:"Stove",link:""},
+  {protein:"Beef",name:"Mediterranean Beef and Veggie Skillet",category:"Mediterranean",method:"Stove",link:"https://thedefineddish.com/mediterranean-beef-and-veggie-skillet/"},
+  {protein:"Turkey",name:"Turkey Chili",category:"American",method:"Crockpot",link:""},
+  {protein:"Chicken",name:"Healing Chicken Soup",category:"Soup",method:"Crockpot",link:""},
+  {protein:"Beef",name:"Slow Cooker Beef Ragu",category:"Italian",method:"Crockpot",link:""},
+  {protein:"Various",name:"Freezer Friendly Meals",category:"Meal Prep",method:"Crockpot",link:""},
+  {protein:"Chicken",name:"Tandoori-Inspired Coconut Chicken",category:"Indian",method:"Crockpot",link:""},
+  {protein:"Pork",name:"Slow Cooker Pork Carnitas",category:"Mexican",method:"Crockpot",link:""},
+  {protein:"Beef",name:"Slow Cooker Korean Beef",category:"Asian",method:"Crockpot",link:"https://www.delish.com/cooking/recipe-ideas/recipes/a45850/slow-cooker-korean-beef-recipe/"},
+  {protein:"Beef",name:"One Pot Beef Enchiladas",category:"Mexican",method:"Stove",link:"https://therealfooddietitians.com/beef-skillet-enchiladas/"},
+  {protein:"Chicken",name:"Sheet Pan Greek Chicken",category:"Mediterranean",method:"Oven",link:""},
+  {protein:"Chicken",name:"Chicken and Chickpea Curry",category:"Indian",method:"Stove",link:""},
+  {protein:"Chicken",name:"Greek Orzo Chicken Skillet",category:"Mediterranean",method:"Stove",link:""},
+  {protein:"Pork",name:"Pork Carnitas",category:"Mexican",method:"Crockpot",link:""},
+  {protein:"Beef",name:"Steak Taco Marinade",category:"Mexican",method:"Grill",link:"https://www.foodandwine.com/recipes/chile-spiced-skirt-steak-tacos"},
+];
+
+const EMOJI_MAP = {
+  Asian:"🥢", Italian:"🍝", Mediterranean:"🫒", Mexican:"🌮", Indian:"🍛",
+  Japanese:"🍱", Salad:"🥗", Bowl:"🥙", Soup:"🥣", Latin:"🐟",
+  Pizza:"🍕", Sauce:"🧄", Lunch:"🥪", American:"🍔", Breakfast:"🥞",
+  "Meal Prep":"📦", Other:"🍽️"
+};
+const BG_MAP = {
+  Asian:"#EEF6F0", Italian:"#FDF5EC", Mediterranean:"#EEF9F4", Mexican:"#FEF7E6",
+  Indian:"#FBF3EC", Japanese:"#F5F0FB", Salad:"#F0FAF2", Bowl:"#EEF6F0",
+  Soup:"#FDF5EC", Latin:"#EFF8FB", Pizza:"#FDF5EC", Sauce:"#F7F7F3",
+  Lunch:"#F7F7F3", American:"#FBF0EC", Breakfast:"#FEF9ED", "Meal Prep":"#F0F0EB", Other:"#F4F4F0"
+};
+
+const cats = ["All", ...Array.from(new Set(RAW.map(r => r.category).filter(Boolean))).sort()];
+let activeFilter = "All";
+
+function buildFilters() {
+  const bar = document.getElementById("filter-bar");
+  const priority = ["All","Asian","Italian","Mediterranean","Mexican","American","Indian","Japanese","Salad","Bowl","Soup"];
+  const rest = cats.filter(c => !priority.includes(c));
+  const ordered = [...priority.filter(c => cats.includes(c)), ...rest];
+  bar.innerHTML = ordered.map(c =>
+    `<button class="filter-chip${c==='All'?' active':''}" onclick="setFilter('${c}',this)">${c}</button>`
+  ).join('');
+}
+
+function setFilter(f, btn) {
+  activeFilter = f;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilters();
+}
+
+function applyFilters() {
+  const q = document.getElementById('search').value.toLowerCase().trim();
+  let list = RAW;
+  if (activeFilter !== 'All') list = list.filter(r => r.category === activeFilter);
+  if (q) list = list.filter(r => r.name.toLowerCase().includes(q) || (r.protein||'').toLowerCase().includes(q) || (r.category||'').toLowerCase().includes(q));
+  renderRecipes(list);
+  document.getElementById('showing-count').textContent = list.length;
+  document.getElementById('results-bar').textContent = `Showing ${list.length} of ${RAW.length} recipes${q ? ` matching "${q}"` : ''}${activeFilter !== 'All' ? ` in ${activeFilter}` : ''}`;
+}
+
+function renderRecipes(list) {
+  const grid = document.getElementById('recipe-grid');
+  if (list.length === 0) {
+    grid.innerHTML = '<div class="empty"><div style="font-size:36px">🔍</div><p>No recipes found. Try a different search or filter.</p></div>';
+    return;
+  }
+  grid.innerHTML = list.map(r => {
+    const cat = r.category || 'Other';
+    const emoji = EMOJI_MAP[cat] || '🍽️';
+    const bg = BG_MAP[cat] || '#F4F4F0';
+    const source = r.link ? extractSource(r.link) : '';
+    return `<div class="card" onclick='openDetail(${JSON.stringify(r).replace(/'/g,"&#39;")})'>
+      <div class="card-img" style="background:${bg}">${emoji}</div>
+      <div class="card-body">
+        <div class="card-meta">
+          <span class="card-tag">${cat}</span>
+          ${r.method ? `<span class="card-method">⚙ ${r.method}</span>` : ''}
+        </div>
+        <div class="card-title">${r.name}</div>
+        ${r.protein && r.protein !== 'N/A' && r.protein !== 'Various' ? `<div class="card-protein">Protein: ${r.protein}</div>` : ''}
+        ${source ? `<div class="card-source">↗ ${source}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function extractSource(url) {
+  if (!url || !url.startsWith('http')) {
+    if (url && url.includes(' - ')) return url.split(' - ').pop();
+    return '';
+  }
+  try { return new URL(url).hostname.replace('www.',''); } catch(e) { return ''; }
+}
+
+function openDetail(r) {
+  const cat = r.category || 'Other';
+  const emoji = EMOJI_MAP[cat] || '🍽️';
+  const url = (r.link && r.link.startsWith('http')) ? r.link : null;
+  const content = document.getElementById('modal-content');
+  content.innerHTML = `
+    <div class="modal-emoji">${emoji}</div>
+    <div class="modal-badges">
+      ${cat ? `<span class="modal-badge badge-cat">${cat}</span>` : ''}
+      ${r.method ? `<span class="modal-badge badge-method">${r.method}</span>` : ''}
+      ${r.protein && r.protein !== 'N/A' ? `<span class="modal-badge badge-protein">${r.protein}</span>` : ''}
+    </div>
+    <div class="modal-title">${r.name}</div>
+    ${url
+      ? `<a class="modal-link" href="${url}" target="_blank">View Full Recipe ↗</a>`
+      : `<p class="modal-note">No link saved — check your binder or original source.</p>`
+    }
+  `;
+  document.getElementById('detail-modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('detail-modal').classList.remove('open');
+}
+
+document.getElementById('detail-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('detail-modal')) closeModal();
+});
+
+buildFilters();
+applyFilters();
+</script>
+</body>
+</html>
